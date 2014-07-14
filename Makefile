@@ -8,3 +8,6 @@ test: tests/coap_test.c src/coap.h
 
 buildtest: tests/coap_test.c src/coap.h
 	$(CC) -g tests/coap_test.c src/coap.c -o test -Wall
+
+posixclient: examples/posix/client.c src/coap.h
+	$(CC) -g examples/posix/client.c src/coap.c -o posixclient -Wall
