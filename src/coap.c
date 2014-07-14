@@ -360,7 +360,7 @@ int8_t coap_set_token(uint8_t *pkt, size_t *pkt_len, size_t max_len, uint64_t to
 	}
 
 	// Set TKL in packet.
-	pkt[0] = (tkl) | (pkt[0] & ~(4 << 0));
+	pkt[0] = (tkl) | (pkt[0] & 0xF0);
 
 	// Set token.
 	for (i = 0; i < tkl; i++){
