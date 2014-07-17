@@ -276,7 +276,7 @@ int8_t coap_set_version(uint8_t *pkt, size_t *pkt_len, size_t max_len, coap_vers
 	if (max_len < 1)
 		return CS_INSUFFICIENT_BUFFER;
 
-	pkt[0] = (ver << 6) | (pkt[0] & ~(2 << 6));
+	pkt[0] = (ver << 6) | (pkt[0] & 0x3F);
 
 	if (*pkt_len < 1)
 		*pkt_len = 1;
@@ -291,7 +291,7 @@ int8_t coap_set_type(uint8_t *pkt, size_t *pkt_len, size_t max_len, coap_type mt
 	if (max_len < 1)
 		return CS_INSUFFICIENT_BUFFER;
 
-	pkt[0] = (mtype << 4) | (pkt[0] & ~(2 << 4));
+	pkt[0] = (mtype << 4) | (pkt[0] & 0xCF);
 
 	if (*pkt_len < 1)
 		*pkt_len = 1;
