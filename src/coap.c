@@ -437,7 +437,7 @@ int8_t coap_add_option(uint8_t *pkt, size_t *pkt_len, size_t max_len, int32_t op
 }
 
 // returns >=0 on success or <0 for error
-int8_t coap_set_payload(uint8_t *pkt, size_t *pkt_len, size_t max_len, uint8_t *value, size_t payload_len){
+int8_t coap_set_payload(uint8_t *pkt, size_t *pkt_len, size_t max_len, uint8_t *payload, size_t payload_len){
 	uint8_t *pkt_ptr, *fopt_val;
 	int8_t token_length;
 	int32_t fopt_num, fopt_len;
@@ -467,13 +467,18 @@ int8_t coap_set_payload(uint8_t *pkt, size_t *pkt_len, size_t max_len, uint8_t *
 			return CS_INSUFFICIENT_BUFFER;
 
 		*(pkt_ptr++) = 0xFF;
+		*pkt_len += payload_len + 1;
 	}else if (fopt_len == CS_FOUND_PAYLOAD_MARKER){
 		// Check that we were given enough buffer.
 		if (max_len < *pkt_len + payload_len)
 			return CS_INSUFFICIENT_BUFFER;	
+
+		*pkt_len += payload_len;
 	}else{
 		return fopt_len;
 	}
+
+	memcpy(pkt_ptr, payload, payload_len);
 
 	return CS_OK;
 }

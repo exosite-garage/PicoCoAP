@@ -216,6 +216,52 @@ static char * test_msg_get_con_setters_out_order() {
 	return 0;
 }
 
+static char * test_msg_post_con_setters() {
+	uint8_t msg_bin_ref[] = {0x40,0x02,0x00,0x37,0xb2,0x31,0x61,0x04,0x74,0x65,
+	                         0x6d,0x70,0x4d,0x1b,0x61,0x33,0x32,0x63,0x38,0x35,
+	                         0x62,0x61,0x39,0x64,0x64,0x61,0x34,0x35,0x38,0x32,
+	                         0x33,0x62,0x65,0x34,0x31,0x36,0x32,0x34,0x36,0x63,
+	                         0x66,0x38,0x62,0x34,0x33,0x33,0x62,0x61,0x61,0x30,
+	                         0x36,0x38,0x64,0x37,0xFF,0x39,0x39};
+	uint8_t msg_bin_tst[57];
+	size_t msg_len = 0;
+
+	mu_assert("[ERROR] POST CON failed to set version.",
+	          coap_set_version(msg_bin_tst, &msg_len, 57, COAP_V1) >= 0);
+
+	mu_assert("[ERROR] POST CON failed to set type.",
+	          coap_set_type(msg_bin_tst, &msg_len, 57, CT_CON) >= 0);
+
+	mu_assert("[ERROR] POST CON failed to set code.",
+	          coap_set_code(msg_bin_tst, &msg_len, 57, CC_POST) >= 0);
+
+	mu_assert("[ERROR] POST CON failed to set message ID.",
+	          coap_set_mid(msg_bin_tst, &msg_len, 57, 0x37) >= 0);
+
+	mu_assert("[ERROR] POST CON failed to set token.",
+	          coap_set_token(msg_bin_tst, &msg_len, 57, 0, 0) >= 0);
+
+	mu_assert("[ERROR] POST CON failed to add first path option.",
+	          coap_add_option(msg_bin_tst, &msg_len, 57, CON_URI_PATH, msg_bin_ref+5, 2) >= 0);
+
+	mu_assert("[ERROR] POST CON failed to add second path option.",
+	          coap_add_option(msg_bin_tst, &msg_len, 57, CON_URI_PATH, msg_bin_ref+8, 4) >= 0);
+
+	mu_assert("[ERROR] POST CON failed to add query option.",
+	          coap_add_option(msg_bin_tst, &msg_len, 57, CON_URI_QUERY, msg_bin_ref+14, 40) >= 0);
+
+	mu_assert("[ERROR] POST CON failed to add query option.",
+	          coap_set_payload(msg_bin_tst, &msg_len, 57, msg_bin_ref+55, 2) >= 0);
+
+	mu_assert("[ERROR] POST CON length set wrong.",
+	          msg_len == 57);
+
+	mu_assert("[ERROR] POST CON failed to encode.",
+	          memcmp(msg_bin_ref, msg_bin_tst, 57) == 0);
+
+	return 0;
+}
+
 static char * test_msg_content_ack_getters() {
 	uint8_t msg_bin_ref[] = {0x61,0x45,0xEE,0xCC,0xA2,0xFF,0x35,0x36};
 	int32_t payload_length;
@@ -287,6 +333,7 @@ static char * all_tests() {
 	mu_run_test(test_msg_get_con_setters);
 	mu_run_test(test_msg_content_ack_getters);
 	mu_run_test(test_msg_get_con_setters_out_order);
+	mu_run_test(test_msg_post_con_setters);
 	return 0;
 }
 
