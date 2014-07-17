@@ -183,19 +183,19 @@ static char * test_msg_get_con_setters_out_order() {
 
 	memset(msg_bin_tst, 0, 64);
 
-	mu_assert("[ERROR] GET CON failed to set version.",
+	mu_assert("[ERROR] GET CON failed to set version. (Out of Order)",
 	          coap_set_version(msg_bin_tst, &msg_len, 64, COAP_V1) >= 0);
 
-	mu_assert("[ERROR] GET CON failed to set type.",
+	mu_assert("[ERROR] GET CON failed to set type. (Out of Order)",
 	          coap_set_type(msg_bin_tst, &msg_len, 64, CT_CON) >= 0);
 
-	mu_assert("[ERROR] GET CON failed to set code.",
+	mu_assert("[ERROR] GET CON failed to set code. (Out of Order)",
 	          coap_set_code(msg_bin_tst, &msg_len, 64, CC_GET) >= 0);
 
-	mu_assert("[ERROR] GET CON failed to set message ID.",
+	mu_assert("[ERROR] GET CON failed to set message ID. (Out of Order)",
 	          coap_set_mid(msg_bin_tst, &msg_len, 64, 0x37) >= 0);
 
-	mu_assert("[ERROR] GET CON failed to set token.",
+	mu_assert("[ERROR] GET CON failed to set token. (Out of Order)",
 	          coap_set_token(msg_bin_tst, &msg_len, 64, 0xFFFFFFFF, 4) >= 0);
 
 	mu_assert("[ERROR] GET CON failed to add first path option. (Out of Order)",
@@ -204,13 +204,13 @@ static char * test_msg_get_con_setters_out_order() {
 	mu_assert("[ERROR] GET CON failed to add second path option. (Out of Order)",
 	          coap_add_option(msg_bin_tst, &msg_len, 64, CON_URI_PATH, msg_bin_ref+12, 4) >= 0);
 
-	mu_assert("[ERROR] GET CON failed to add query option.",
+	mu_assert("[ERROR] GET CON failed to add query option. (Out of Order)",
 	          coap_add_option(msg_bin_tst, &msg_len, 64, CON_URI_QUERY, msg_bin_ref+18, 40) >= 0);
 
-	mu_assert("[ERROR] GET CON length set wrong.",
+	mu_assert("[ERROR] GET CON length set wrong. (Out of Order)",
 	          msg_len == 58);
 
-	mu_assert("[ERROR] GET CON failed to encode.",
+	mu_assert("[ERROR] GET CON failed to encode. (Out of Order)",
 	          memcmp(msg_bin_ref, msg_bin_tst, 58) == 0);
 
 	return 0;
