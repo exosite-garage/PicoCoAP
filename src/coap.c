@@ -467,17 +467,15 @@ int8_t coap_set_payload(uint8_t *pkt, size_t *pkt_len, size_t max_len, uint8_t *
 			return CS_INSUFFICIENT_BUFFER;
 
 		*(pkt_ptr++) = 0xFF;
-		*pkt_len += payload_len + 1;
 	}else if (fopt_len == CS_FOUND_PAYLOAD_MARKER){
 		// Check that we were given enough buffer.
 		if (max_len < *pkt_len + payload_len)
 			return CS_INSUFFICIENT_BUFFER;	
-
-		*pkt_len += payload_len;
 	}else{
 		return fopt_len;
 	}
 
+	*pkt_len = (pkt_ptr - pkt) + payload_len;
 	memcpy(pkt_ptr, payload, payload_len);
 
 	return CS_OK;
