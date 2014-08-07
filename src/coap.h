@@ -362,6 +362,16 @@ int8_t coap_add_option(uint8_t *pkt, size_t *pkt_len, size_t max_size, int32_t o
 ///
 int8_t coap_set_payload(uint8_t *pkt, size_t *pkt_len, size_t max_size, uint8_t *pl_val, size_t pl_len);
 
+///
+/// Build Message Code from Class and Detail
+///
+/// Gets the class portion of the message code.
+/// @param  [in]  pkt       pointer to a buffer containing the message to be parsed.
+/// @param  [in]  pkt_len   the length of the message to be parsed.
+/// @see    coap_get_code
+///
+static inline uint8_t coap_build_code(uint8_t class, uint8_t detail) { return (class << 5) | detail; }
+
 //
 // Internal
 //

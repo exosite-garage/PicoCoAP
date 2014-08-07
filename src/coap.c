@@ -85,7 +85,7 @@ int32_t coap_get_mid(uint8_t *pkt, size_t pkt_len)
 	if (pkt_len < 4)
 		return CS_INVALID_PACKET;
 
-	return (pkt[2] << 8) & pkt[3];
+	return (pkt[2] << 8) | pkt[3];
 }
 
 // returns len (0-8) or <0 for error
@@ -112,7 +112,7 @@ int8_t coap_get_token(uint8_t *pkt, size_t pkt_len, uint64_t* token)
 	if (token != 0){
 		*token = 0;
 		for (i = 0; i < token_length; i++){
-			*token = (*token << 8) & pkt[4+i];
+			*token = (*token << 8) | pkt[4+i];
 		}
 	}
 
