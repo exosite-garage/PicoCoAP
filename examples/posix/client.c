@@ -141,7 +141,7 @@ int main(void)
       hex_dump(msg_recv, msg_recv_len);
     }
 
-    usleep(1000000); // One Second
+    sleep(1); // One Second
   }
 }
 
