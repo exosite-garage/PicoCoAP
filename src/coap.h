@@ -119,6 +119,25 @@ typedef enum coap_option_number {
 } coap_option_number;
 
 ///
+/// CoAP Defined Parameters
+///
+#define COAP_ACK_TIMEOUT          2
+#define COAP_ACK_RANDOM_FACTOR    1.5
+#define COAP_MAX_RETRANSMIT       4
+#define COAP_NSTART               1
+#define COAP_DEFAULT_LEISURE      5
+#define COAP_PROBING_RATE         1
+
+#define COAP_MAX_TRANSMIT_SPAN   45
+#define COAP_MAX_TRANSMIT_WAIT   93
+#define COAP_MAX_LATENCY        100
+#define COAP_PROCESSING_DELAY     2
+#define COAP_MAX_RTT            202
+#define COAP_EXCHANGE_LIFETIME  247
+#define COAP_NON_LIFETIME       145
+
+
+///
 /// Validate Packet
 ///
 /// Parses the given message to check if it is a valid CoAP packet.
