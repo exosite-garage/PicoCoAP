@@ -543,13 +543,13 @@ int8_t coap_build_option_header(uint8_t *buf, size_t max_len, int32_t opt_delta,
 
 	if (opt_delta < 13) {
 		base_num = opt_delta;
-	}else if (opt_delta >= 13) {
+	}else if (opt_delta < 269) {
 		if (max_len < ptr-buf + 1)
 			return CS_INSUFFICIENT_BUFFER;
 
 		base_num = 13;
 		*(ptr++) = opt_delta - 13;
-	}else if (opt_delta >= 269) {
+	}else {
 		if (max_len < ptr-buf + 2)
 			return CS_INSUFFICIENT_BUFFER;
 
@@ -560,13 +560,13 @@ int8_t coap_build_option_header(uint8_t *buf, size_t max_len, int32_t opt_delta,
 
 	if (opt_len < 13) {
 		base_len = opt_len;
-	}else if (opt_len >= 13) {
+	}else if (opt_len < 269 {
 		if (max_len < ptr-buf + 1)
 			return CS_INSUFFICIENT_BUFFER;
 
 		base_len = 13;
 		*(ptr++) = opt_len - 13;
-	}else if (opt_len >= 269) {
+	}else {
 		if (max_len < ptr-buf + 2)
 			return CS_INSUFFICIENT_BUFFER;
 
@@ -589,16 +589,16 @@ int8_t coap_compute_option_header_len(int32_t opt_delta, int32_t opt_len)
 	int8_t len = 1;
 
 	if (opt_delta < 13) {
-	}else if (opt_delta >= 13) {
+	}else if (opt_delta < 269) {
 		len += 1;
-	}else if (opt_delta >= 269) {
+	}else {
 		len += 2;
 	}
 
 	if (opt_len < 13) {
-	}else if (opt_len >= 13) {
+	}else if (opt_len < 269) {
 		len += 1;
-	}else if (opt_len >= 269) {
+	}else {
 		len += 2;
 	}
 
