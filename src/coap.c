@@ -560,7 +560,7 @@ int8_t coap_build_option_header(uint8_t *buf, size_t max_len, int32_t opt_delta,
 
 	if (opt_len < 13) {
 		base_len = opt_len;
-	}else if (opt_len < 269 {
+	}else if (opt_len < 269) {
 		if (max_len < ptr-buf + 1)
 			return CS_INSUFFICIENT_BUFFER;
 
