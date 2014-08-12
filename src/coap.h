@@ -415,3 +415,4 @@ int8_t coap_compute_option_header_len(int32_t opt_delta, int32_t opt_len);
 #endif
 
 #endif /*_COAP_H_*/
+

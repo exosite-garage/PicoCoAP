@@ -204,7 +204,7 @@ int32_t coap_decode_option(uint8_t *pkt_ptr, size_t pkt_len, int32_t *option_num
 
 	// Check for and Get Extended Delta
 	if (delta < 13) {
-		delta = delta;
+		//delta = delta;
 	}else if (delta == 13) {
 		delta = *ptr + 13;
 		ptr += 1;
@@ -217,7 +217,7 @@ int32_t coap_decode_option(uint8_t *pkt_ptr, size_t pkt_len, int32_t *option_num
 
 	// Check for and Get Extended Length
 	if (length < 13) {
-		length = length;
+		//length = length;
 	}else if (length == 13) {
 		length = *ptr + 13;
 		ptr += 1;
@@ -605,3 +605,4 @@ int8_t coap_compute_option_header_len(int32_t opt_delta, int32_t opt_len)
 	return len;
 
 }
+
