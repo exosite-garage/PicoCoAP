@@ -20,23 +20,42 @@ extern "C" {
 
 
 ///
+/// CoAP Defined Parameters
+///
+#define COAP_ACK_TIMEOUT          2
+#define COAP_ACK_RANDOM_FACTOR    1.5
+#define COAP_MAX_RETRANSMIT       4
+#define COAP_NSTART               1
+#define COAP_DEFAULT_LEISURE      5
+#define COAP_PROBING_RATE         1
+
+#define COAP_MAX_TRANSMIT_SPAN   45
+#define COAP_MAX_TRANSMIT_WAIT   93
+#define COAP_MAX_LATENCY        100
+#define COAP_PROCESSING_DELAY     2
+#define COAP_MAX_RTT            202
+#define COAP_EXCHANGE_LIFETIME  247
+#define COAP_NON_LIFETIME       145
+
+
+///
 /// Status Codes
 ///
 /// These codes represent the possible errors that functions in this library can
 /// return. Note that all errors are < 0.
 ///
-typedef enum coap_status {
-	CS_OK = 0,
-	CS_INVALID_PACKET = -1,
-	CS_BAD_VERSION = -2,
-	CS_TOKEN_LENGTH_OUT_OF_RANGE = -3,
-	CS_UNKNOWN_CODE = -4,
-	CS_TOO_MANY_OPTIONS = -5,
-	CS_OUT_OF_ORDER_OPTIONS_LIST = -6,
-	CS_INSUFFICIENT_BUFFER = -7,
-	CS_FOUND_PAYLOAD_MARKER = -8,
-	CS_END_OF_PACKET = -9
-} coap_status;
+typedef enum coap_error {
+	CE_NONE = 0,
+	CE_INVALID_PACKET,
+	CE_BAD_VERSION,
+	CE_TOKEN_LENGTH_OUT_OF_RANGE,
+	CE_UNKNOWN_CODE,
+	CE_TOO_MANY_OPTIONS,
+	CE_OUT_OF_ORDER_OPTIONS_LIST,
+	CE_INSUFFICIENT_BUFFER,
+	CE_FOUND_PAYLOAD_MARKER,
+	CE_END_OF_PACKET
+} coap_error;
 
 ///
 /// Protocol Versions
@@ -118,235 +137,151 @@ typedef enum coap_option_number {
 	CON_SIZE1 = 60
 } coap_option_number;
 
-///
-/// CoAP Defined Parameters
-///
-#define COAP_ACK_TIMEOUT          2
-#define COAP_ACK_RANDOM_FACTOR    1.5
-#define COAP_MAX_RETRANSMIT       4
-#define COAP_NSTART               1
-#define COAP_DEFAULT_LEISURE      5
-#define COAP_PROBING_RATE         1
 
-#define COAP_MAX_TRANSMIT_SPAN   45
-#define COAP_MAX_TRANSMIT_WAIT   93
-#define COAP_MAX_LATENCY        100
-#define COAP_PROCESSING_DELAY     2
-#define COAP_MAX_RTT            202
-#define COAP_EXCHANGE_LIFETIME  247
-#define COAP_NON_LIFETIME       145
+///
+/// Coap Header
+///
+/// An overlayed bit field struct for accessing header fields.
+///
+typedef struct coap_hdr {
+	unsigned tkl:4;  /// token length
+	unsigned type:2; /// message type
+	unsigned ver:2;  /// coap version
+	unsigned code:8; /// message code
+	unsigned mid:16; /// message id
+} coap_hdr;
+
+///
+/// Packet Data Unit
+///
+/// This contains all information about the message buffer.
+///
+typedef struct coap_pdu {
+	uint8_t *buf;  /// pointer to buffer
+	size_t len;	   /// length of current message
+	size_t max;	   /// size of buffer
+	coap_hdr *hdr; /// header bit field overlay
+	uint8_t *opt_ptr; /// Internal Pointer for Option Iterator
+} coap_pdu;
+
+///
+/// CoAP Option
+///
+/// One option in a CoAP message.
+///
+typedef struct coap_option {
+	uint16_t num;	/// size of buffer
+	size_t len;	/// length of the value
+	uint8_t *val;	/// pointer value
+} coap_option;
+
+///
+/// CoAP Payload
+///
+/// Payload container.
+///
+typedef struct coap_payload {
+	size_t len;	/// length of current message
+	uint8_t *val;	/// pointer to buffer
+} coap_payload;
 
 
 ///
 /// Validate Packet
 ///
-/// Parses the given message to check if it is a valid CoAP packet.
-/// @param  [in] pkt     pointer to a buffer containing the message to be validated.
-/// @param  [in] pkt_len the length of the message to be validated.
-/// @return CS_OK for valid packet or <=0 on error.
-/// @see    coap_status
+/// Parses the given packet to check if it is a valid CoAP message.
+/// This function (or coap_init_pdu for creating new packets) must be
+/// called and must return CE_NONE before you can use any of the
+/// getters or setter.
+/// @param  [in] pdu pointer to the coap message struct.
+/// @return error code (CE_NONE == 0 == no error).
+/// @see    coap_error
+/// @see    coap_init_pdu
 ///
-int8_t coap_validate_pkt(uint8_t *pkt, size_t pkt_len);
+uint8_t coap_validate_pkt(coap_pdu *pdu);
 
 //
 // Getters
 //
 
 ///
-/// Get Version
-///
-/// Extracts the CoAP version from the given message.
-/// @param  [in] pkt     pointer to a buffer containing the message to be parsed.
-/// @param  [in] pkt_len the length of the message to be parsed.
-/// @return version or <=0 on error.
-/// @see coap_version
-/// @see coap_status
-///
-int8_t  coap_get_version(uint8_t *pkt, size_t pkt_len);
-
-///
-/// Get Message Type
-///
-/// Extracts the message type from the given message.
-/// @param  [in] pkt     pointer to a buffer containing the message to be parsed.
-/// @param  [in] pkt_len the length of the message to be parsed.
-/// @return type or <=0 on error.
-/// @see coap_type
-/// @see coap_status
-///
-int8_t  coap_get_type(uint8_t *pkt, size_t pkt_len);
-
-///
-/// Get Message Code
-///
-/// Extracts the message code from the given message.
-/// @param  [in] pkt     pointer to a buffer containing the message to be parsed.
-/// @param  [in] pkt_len the length of the message to be parsed.
-/// @return code or <=0 on error.
-/// @see coap_code
-/// @see coap_status
-///
-int16_t coap_get_code(uint8_t *pkt, size_t pkt_len);
-
-///
-/// Get Message ID
-///
-/// Extracts the message ID from the given message.
-/// @param  [in] pkt     pointer to a buffer containing the message to be parsed.
-/// @param  [in] pkt_len the length of the message to be parsed.
-/// @return mid or <=0 on error.
-/// @see coap_status
-///
-int32_t coap_get_mid(uint8_t *pkt, size_t pkt_len);
-
-///
 /// Get Message Token
 ///
 /// Extracts the token from the given message.
-/// @param  [in]  pkt     pointer to a buffer containing the message to be parsed.
-/// @param  [in]  pkt_len the length of the message to be parsed.
-/// @param  [out] token   pointer to where the token should be stored.
-/// @return token length or <=0 on error.
-/// @see coap_status
+/// @param  [in] pdu pointer to the coap message struct.
+/// @return token.
 ///
-int8_t  coap_get_token(uint8_t *pkt, size_t pkt_len, uint64_t* token);
+uint64_t  coap_get_token(coap_pdu *pdu);
 
 ///
-/// Get Option Count
+/// Get Option
 ///
-/// Extracts the number of options in the given message.
-/// @param  [in]  pkt     pointer to a buffer containing the message to be parsed.
-/// @param  [in]  pkt_len the length of the message to be parsed.
-/// @return option count or <=0 on error.
-/// @see coap_status
+/// Iterates over the options in the given message.
+/// @param  [in]  pdu  pointer to the coap message struct.
+/// @param  [in, out]  pointer to the last/next option, pass
+///                    0 for the first option.
+/// @return coap_option
 ///
-int32_t coap_get_option_count(uint8_t *pkt, size_t pkt_len);
+coap_option coap_get_option(coap_pdu *pdu, coap_option *last);
 
 ///
 /// Get Option
 ///
 /// Extracts the option with the given index in the given message.
-/// @param  [in]  pkt       pointer to a buffer containing the message to be parsed.
-/// @param  [in]  pkt_len   the length of the message to be parsed.
-/// @param  [in]  opt_index the index of the option to get.
-/// @param  [out] opt_num   pointer to where the option number should be stored.
-/// @param  [out] value     pointer to where the pointer to the value should be stored. Note that
-///                         the returned pointer is only valid while the pkt buffer remains intact.
-/// @return option value length or <=0 on error.
-/// @see coap_status
+/// @param  [in]  pdu    pointer to the coap message struct.
+/// @return coap_payload
 ///
-int32_t coap_get_option(uint8_t *pkt, size_t pkt_len, size_t opt_index, int32_t *opt_num, uint8_t **value);
-
-///
-/// Get Option
-///
-/// Extracts the option with the given index in the given message.
-/// @param  [in]  pkt       pointer to a buffer containing the message to be parsed.
-/// @param  [in]  pkt_len   the length of the message to be parsed.
-/// @param  [out] value     pointer to where the pointer to the payload should be stored. Note that
-///                         the returned pointer is only valid while the pkt buffer remains intact.
-/// @return payload length or <=0 on error.
-/// @see coap_status
-///
-int32_t coap_get_payload(uint8_t *pkt, size_t pkt_len, uint8_t **value);
+coap_payload coap_get_payload(coap_pdu *pdu);
 
 ///
 /// Get Message Code Class
 ///
 /// Gets the class portion of the message code.
-/// @param  [in]  pkt       pointer to a buffer containing the message to be parsed.
-/// @param  [in]  pkt_len   the length of the message to be parsed.
+/// @param  [in] pdu pointer to the coap message struct.
 /// @see    coap_get_code
 ///
-static inline uint8_t coap_get_code_class(uint8_t *pkt, size_t pkt_len) { return coap_get_code(pkt, pkt_len) >> 5; }
+static inline uint8_t coap_get_code_class(coap_pdu *pdu) { return pdu->hdr->code >> 5; }
 
 ///
 /// Get Message Code Detail
 ///
 /// Gets the detail portion of the message code.
-/// @param  [in]  pkt       pointer to a buffer containing the message to be parsed.
-/// @param  [in]  pkt_len   the length of the message to be parsed.
+/// @param  [in] pdu pointer to the coap message struct.
 /// @see    coap_get_code
 ///
-static inline uint8_t coap_get_code_detail(uint8_t *pkt, size_t pkt_len) { return coap_get_code(pkt, pkt_len) & 0x1F; }
+static inline uint8_t coap_get_code_detail(coap_pdu *pdu) { return pdu->hdr->code & 0x1F; }
 
 ///
 /// Internal Method
 ///
-int32_t coap_decode_option(uint8_t *opt_start_ptr, size_t pkt_len, int32_t *option_number, uint8_t **value);
+coap_error coap_decode_option(uint8_t *pkt_ptr, size_t pkt_len,
+	                          uint16_t *option_number, size_t *option_length, uint8_t **value);
 
 //
 // Setters
 //
 
 ///
-/// Set Version
+/// Initialize Packet
 ///
-/// Sets the version number header field.
-/// @param  [in]      pkt      pointer to a buffer containing the message.
-/// @param  [in,out]  pkt_len  the length of the message.
-/// @param  [in]      max_size the length of the buffer.
-/// @param  [in]      ver      version to set. Must be COAP_V1.
-/// @return CS_OK on success or <=0 on error.
-/// @see coap_status
-/// @see coap_version
+/// Initializes on an empty buffer for creating new CoAP packets.
+/// This function (or coap_validate for parsing packets) must be
+/// called and must return CE_NONE before you can use any of the
+/// getters or setter.
+/// @param  [in, out] pdu pointer to the coap message struct.
+/// @return coap_error (0 == no error)
 ///
-int8_t coap_set_version(uint8_t *pkt, size_t *pkt_len, size_t max_size, coap_version ver);
-
-///
-/// Set Message Type
-///
-/// Sets the message type header field.
-/// @param  [in]      pkt      pointer to a buffer containing the message.
-/// @param  [in,out]  pkt_len  the length of the message.
-/// @param  [in]      max_size the length of the buffer.
-/// @param  [in]      mtype    type to set.
-/// @return CS_OK on success or <=0 on error.
-/// @see coap_status
-/// @see coap_type
-///
-int8_t coap_set_type(uint8_t *pkt, size_t *pkt_len, size_t max_size, coap_type mtype);
-
-///
-/// Set Message Code
-///
-/// Sets the message type header field.
-/// @param  [in]      pkt      pointer to a buffer containing the message.
-/// @param  [in,out]  pkt_len  the length of the message.
-/// @param  [in]      max_size the length of the buffer.
-/// @param  [in]      code     code to set.
-/// @return CS_OK on success or <=0 on error.
-/// @see coap_status
-/// @see coap_code
-///
-int8_t coap_set_code(uint8_t *pkt, size_t *pkt_len, size_t max_size, coap_code code);
-
-///
-/// Set Message ID
-///
-/// Sets the message ID header field.
-/// @param  [in]      pkt      pointer to a buffer containing the message.
-/// @param  [in,out]  pkt_len  the length of the message.
-/// @param  [in]      max_size the length of the buffer.
-/// @param  [in]      mid      message ID to set.
-/// @return CS_OK on success or <=0 on error.
-/// @see coap_status
-///
-int8_t coap_set_mid(uint8_t *pkt, size_t *pkt_len, size_t max_size, uint16_t mid);
+coap_error coap_init_pdu(coap_pdu *pdu);
 
 ///
 /// Set Message Token
 ///
 /// Sets the message token header field.
-/// @param  [in]      pkt      pointer to a buffer containing the message.
-/// @param  [in,out]  pkt_len  the length of the message.
-/// @param  [in]      max_size the length of the buffer.
+/// @param  [in, out] pdu pointer to the coap message struct.
 /// @param  [in]      token    token value to set.
-/// @param  [in]      len      token length to set. (0-8)
-/// @return CS_OK on success or <=0 on error.
-/// @see coap_status
+/// @return coap_error (0 == no error)
 ///
-int8_t coap_set_token(uint8_t *pkt, size_t *pkt_len, size_t max_size, uint64_t token, uint8_t len);
+coap_error coap_set_token(coap_pdu *pdu, uint64_t token, uint8_t tkl);
 
 ///
 /// Add Message Option
@@ -354,42 +289,31 @@ int8_t coap_set_token(uint8_t *pkt, size_t *pkt_len, size_t max_size, uint64_t t
 /// Adds an option to the existing message. Options SHOULD be added in order of
 /// option number. In the case of multiple options of the same type, they are 
 /// sorted in the order that they are added.
-/// @param  [in]      pkt      pointer to a buffer containing the message.
-/// @param  [in,out]  pkt_len  the length of the message.
-/// @param  [in]      max_size the length of the buffer.
-/// @param  [in]      opt_num  the option number (type).
-/// @param  [in]      opt_val  a pointer to the option value. Value is copied
-///                            and may be modified after calling this function.
-/// @param  [in]      opt_len  the length of the option value.
-/// @return CS_OK on success or <=0 on error.
-/// @see coap_status
+/// @param  [in, out] pdu  pointer to the coap message struct.
+/// @param  [in]      opt  option container.
+/// @return coap_error (0 == no error)
 ///
-int8_t coap_add_option(uint8_t *pkt, size_t *pkt_len, size_t max_size, int32_t opt_num, uint8_t* opt_val, uint16_t opt_len);
+coap_error coap_add_option(coap_pdu *pdu, int32_t opt_num, uint8_t* value, uint16_t opt_len);
 
 ///
 /// Add Message Option
 ///
 /// Sets the payload of the given message to the value in `payload`.
-/// @param  [in]      pkt      pointer to a buffer containing the message.
-/// @param  [in,out]  pkt_len  the length of the message.
-/// @param  [in]      max_size the length of the buffer.
-/// @param  [in]      pl_val   a pointer to the payload. Payload is copied
-///                            and may be modified after calling this function.
-/// @param  [in]      pl_len   the length of the option value.
-/// @return CS_OK on success or <=0 on error.
-/// @see coap_status
+/// @param  [in, out] pdu  pointer to the coap message struct.
+/// @param  [in]      pl   payload container.
+/// @return coap_error (0 == no error)
 ///
-int8_t coap_set_payload(uint8_t *pkt, size_t *pkt_len, size_t max_size, uint8_t *pl_val, size_t pl_len);
+coap_error coap_set_payload(coap_pdu *pdu, uint8_t *payload, size_t payload_len);
 
 ///
 /// Build Message Code from Class and Detail
 ///
 /// Gets the class portion of the message code.
-/// @param  [in]  pkt       pointer to a buffer containing the message to be parsed.
-/// @param  [in]  pkt_len   the length of the message to be parsed.
+/// @param  [in]  class  the code class.
+/// @param  [in]  detail the code detail.
 /// @see    coap_get_code
 ///
-static inline uint8_t coap_build_code(uint8_t class, uint8_t detail) { return (class << 5) | detail; }
+static inline uint8_t coap_build_code(uint8_t _class, uint8_t detail) { return (_class << 5) | detail; }
 
 //
 // Internal
@@ -398,7 +322,7 @@ static inline uint8_t coap_build_code(uint8_t class, uint8_t detail) { return (c
 ///
 /// Internal Method
 ///
-int8_t coap_adjust_option_deltas(uint8_t *opts, size_t *opts_len, size_t max_len, int32_t offset);
+coap_error coap_adjust_option_deltas(uint8_t *opts, size_t *opts_len, size_t max_len, int32_t offset);
 
 ///
 /// Internal Method
