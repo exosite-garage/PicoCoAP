@@ -101,10 +101,10 @@ int main(void)
     // Build Message
     coap_init_pdu(&msg_send);
     //memset(msg_send, 0, msg_send_len);
-    msg_send.hdr->ver = COAP_V1;
-    msg_send.hdr->type = CT_CON;
-    msg_send.hdr->code = CC_GET; // or POST to write
-    msg_send.hdr->mid = message_id_counter++;
+    coap_set_version(&msg_send, COAP_V1);
+    coap_set_type(&msg_send, CT_CON);
+    coap_set_code(&msg_send, CC_GET); // or POST to write
+    coap_set_mid(&msg_send, message_id_counter++);
     coap_set_token(&msg_send, rand(), 2);
     coap_add_option(&msg_send, CON_URI_PATH, (uint8_t*)"1a", 2);
     coap_add_option(&msg_send, CON_URI_PATH, (uint8_t*)alias, strlen(alias));
@@ -133,7 +133,7 @@ int main(void)
     if(coap_validate_pkt(&msg_recv) == CE_NONE)
     {
       printf("Got Valid CoAP Packet\n");
-      if(msg_recv.hdr->mid == msg_send.hdr->mid &&
+      if(coap_get_mid(&msg_recv) == coap_get_mid(&msg_send) &&
          coap_get_token(&msg_recv) == coap_get_token(&msg_send))
       {
         printf("Is Response to Last Message\n");
@@ -171,7 +171,7 @@ void coap_pretty_print(coap_pdu *pdu)
 
   if (coap_validate_pkt(pdu) == CE_NONE){
       printf(" ------ Valid CoAP Packet (%zi) ------ \n", pdu->len);
-      printf("Type: %i\n",pdu->hdr->type);
+      printf("Type: %i\n",coap_get_type(pdu));
       printf("Code: %i.%02i\n", coap_get_code_class(pdu), coap_get_code_detail(pdu));
 
       while ((opt = coap_get_option(pdu, &opt)).num != 0){
