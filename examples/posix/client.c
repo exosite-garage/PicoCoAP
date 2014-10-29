@@ -13,7 +13,7 @@
 #include "../../src/coap.h"
  
 void hex_dump(uint8_t* bytes, size_t len);
-void coap_pretty_print(uint8_t* pkt, size_t len);
+void coap_pretty_print(coap_pdu*);
 
 int main(void)
 {
@@ -27,16 +27,17 @@ int main(void)
 
   // CoAP Message Setup
   #define MSG_BUF_LEN 64
-  uint8_t msg_send[MSG_BUF_LEN];
-  size_t  msg_send_len = 0;
-  uint8_t msg_recv[MSG_BUF_LEN];
-  size_t  msg_recv_len = 0;
+  uint8_t msg_send_buf[MSG_BUF_LEN];
+  coap_pdu msg_send = {msg_send_buf, 0, 64};
+  uint8_t msg_recv_buf[MSG_BUF_LEN];
+  coap_pdu msg_recv = {msg_recv_buf, 0, 64};
 
   uint16_t message_id_counter = rand();
 
   // Socket to Exosite
   int localsock, remotesock;
   size_t bytes_sent;
+  ssize_t bytes_recv;
   int rv;
 
   struct addrinfo exohints, *servinfo, *p, *q;
@@ -98,47 +99,49 @@ int main(void)
     printf("--------------------------------------------------------------------------------\n");
 
     // Build Message
-    msg_send_len = 0; // Clear Message Buffer
-    memset(msg_send, 0, msg_send_len);
-    coap_set_version(msg_send, &msg_send_len, MSG_BUF_LEN, COAP_V1);
-    coap_set_type(msg_send, &msg_send_len, MSG_BUF_LEN, CT_CON);
-    coap_set_code(msg_send, &msg_send_len, MSG_BUF_LEN, CC_GET); //or POST
-    coap_set_mid(msg_send, &msg_send_len, MSG_BUF_LEN, message_id_counter++);
-    coap_set_token(msg_send, &msg_send_len, MSG_BUF_LEN, rand(), 2);
-    coap_add_option(msg_send, &msg_send_len, MSG_BUF_LEN, CON_URI_PATH, (uint8_t*)"1a", 2);
-    coap_add_option(msg_send, &msg_send_len, MSG_BUF_LEN, CON_URI_PATH, (uint8_t*)alias, strlen(alias));
-    coap_add_option(msg_send, &msg_send_len, MSG_BUF_LEN, CON_URI_QUERY, (uint8_t*)cik, strlen(cik));
+    coap_init_pdu(&msg_send);
+    //memset(msg_send, 0, msg_send_len);
+    msg_send.hdr->ver = COAP_V1;
+    msg_send.hdr->type = CT_CON;
+    msg_send.hdr->code = CC_GET; // or POST to write
+    msg_send.hdr->mid = message_id_counter++;
+    coap_set_token(&msg_send, rand(), 2);
+    coap_add_option(&msg_send, CON_URI_PATH, (uint8_t*)"1a", 2);
+    coap_add_option(&msg_send, CON_URI_PATH, (uint8_t*)alias, strlen(alias));
+    coap_add_option(&msg_send, CON_URI_QUERY, (uint8_t*)cik, strlen(cik));
+    // to write, set payload:
     //coap_set_payload(msg_send, &msg_send_len, MSG_BUF_LEN, (uint8_t*)"99", 2);
 
     // Send Message
-    if ((bytes_sent = sendto(remotesock, msg_send, msg_send_len, 0, q->ai_addr, q->ai_addrlen)) == -1){
+    if ((bytes_sent = sendto(remotesock, msg_send.buf, msg_send.len, 0, q->ai_addr, q->ai_addrlen)) == -1){
       fprintf(stderr, "Failed to Send Message\n");
       return 2;
     }
 
     printf("Sent.\n");
-    coap_pretty_print(msg_send, msg_send_len);
+    coap_pretty_print(&msg_send);
 
     // Wait for Response
-    msg_recv_len = recvfrom(remotesock, (void *)msg_recv, sizeof(msg_recv), 0, q->ai_addr, &q->ai_addrlen);
-    if (msg_recv_len < 0) {
+    bytes_recv = recvfrom(remotesock, (void *)msg_recv.buf, sizeof(msg_recv.buf), 0, q->ai_addr, &q->ai_addrlen);
+    if (bytes_recv < 0) {
       fprintf(stderr, "%s\n", strerror(errno));
       exit(EXIT_FAILURE);
     }
 
+    msg_recv.len = bytes_recv;
 
-    if(coap_validate_pkt(msg_recv, msg_recv_len) == CS_OK)
+    if(coap_validate_pkt(&msg_recv) == CE_NONE)
     {
       printf("Got Valid CoAP Packet\n");
-      if(coap_get_mid(msg_recv, msg_recv_len) == coap_get_mid(msg_send, msg_send_len) &&
-         coap_get_token(msg_recv, msg_recv_len, 0) == coap_get_token(msg_send, msg_send_len, 0)) //this is only actually checking token length, should check token.
+      if(msg_recv.hdr->mid == msg_send.hdr->mid &&
+         coap_get_token(&msg_recv) == coap_get_token(&msg_send))
       {
         printf("Is Response to Last Message\n");
-        coap_pretty_print(msg_recv, msg_recv_len);
+        coap_pretty_print(&msg_recv);
       }
     }else{
-      printf("Received %zi Bytes, Not Valid CoAP\n", msg_recv_len);
-      hex_dump(msg_recv, msg_recv_len);
+      printf("Received %zi Bytes, Not Valid CoAP\n", msg_recv.len);
+      hex_dump(msg_recv.buf, msg_recv.len);
     }
 
     sleep(1); // One Second
@@ -160,27 +163,28 @@ void hex_dump(uint8_t* bytes, size_t len)
   }
 }
 
-void coap_pretty_print(uint8_t* pkt, size_t len)
+void coap_pretty_print(coap_pdu *pdu)
 {
-  size_t i;
-  uint8_t *ptr;
-  int32_t opt_num, j, k;
+  coap_option opt;
 
-  if(coap_validate_pkt(pkt, len) == CS_OK){
-      printf(" ------ Valid CoAP Packet (%zi) ------ \n", len);
-      printf("Type: %i\n",coap_get_type(pkt, len));
-      printf("Code: %i.%02i\n", coap_get_code_class(pkt, len), coap_get_code_detail(pkt, len));
-      j = coap_get_option_count(pkt, len);
-      for(i = 0; i < j; i++){
-        k = coap_get_option(pkt, len, i, &opt_num, &ptr);
+  opt.num = 0;
 
-        printf("Option: %i\n", opt_num);
-        printf(" Value: %.*s (%i)\n", k, ptr, k);
+  if (coap_validate_pkt(pdu) == CE_NONE){
+      printf(" ------ Valid CoAP Packet (%zi) ------ \n", pdu->len);
+      printf("Type: %i\n",pdu->hdr->type);
+      printf("Code: %i.%02i\n", coap_get_code_class(pdu), coap_get_code_detail(pdu));
+
+      while ((opt = coap_get_option(pdu, &opt)).num != 0){
+        if (opt.num == 0)
+          break;
+
+        printf("Option: %i\n", opt.num);
+        printf(" Value: %.*s (%i)\n", opt.len, opt.val, opt.len);
       }
-      j = coap_get_payload(pkt, len, &ptr);
-      printf("Value: %.*s (%i)\n", j, ptr, j);
-    }else{
-      printf(" ------ Non-CoAP Message (%zi) ------ \n", len);
-      hex_dump(pkt, len);
+      // Note: get_option returns payload pointer when it finds the payload marker
+      printf("Value: %.*s (%i)\n", opt.len, opt.val, opt.len);
+    } else {
+      printf(" ------ Non-CoAP Message (%zi) ------ \n", pdu->len);
+      hex_dump(pdu->buf, pdu->len);
     }
 }
