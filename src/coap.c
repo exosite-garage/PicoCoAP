@@ -8,7 +8,7 @@
 // Getters
 //
 
-uint8_t coap_validate_pkt(coap_pdu *pdu) //uint8_t *pkt, size_t pkt_len)
+coap_error coap_validate_pkt(coap_pdu *pdu) //uint8_t *pkt, size_t pkt_len)
 {
 	coap_error err;
 	size_t ol;

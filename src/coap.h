@@ -198,7 +198,7 @@ typedef struct coap_payload {
 /// @see    coap_error
 /// @see    coap_init_pdu
 ///
-uint8_t coap_validate_pkt(coap_pdu *pdu);
+coap_error coap_validate_pkt(coap_pdu *pdu);
 
 //
 // Getters
