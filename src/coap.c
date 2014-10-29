@@ -78,7 +78,7 @@ coap_option coap_get_option(coap_pdu *pdu, coap_option *last)
 	coap_option option;
 	coap_error err;
 
-	if (last != NULL){
+	if (last != NULL && last->num != 0){
 		option.num = last->num;
 		option.len = 0;
 		option.val = NULL;
@@ -99,8 +99,16 @@ coap_option coap_get_option(coap_pdu *pdu, coap_option *last)
 
 	err = coap_decode_option(opt_ptr, pdu->len-(opt_ptr-pdu->buf), &option.num, &option.len, &option.val);
 
-	if (err != CE_NONE)
+	if (err != CE_NONE){
 		option.num = 0;
+		if (err == CE_FOUND_PAYLOAD_MARKER){
+			option.val = option.val + option.len;
+			option.len = pdu->len - (option.val - pdu->buf);
+		} else {
+			option.val = NULL;
+			option.len = 0;
+		}
+	}
 
 	opt_ptr = option.val + option.len;
 
