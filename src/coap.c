@@ -14,25 +14,24 @@ coap_error coap_validate_pkt(coap_pdu *pdu) //uint8_t *pkt, size_t pkt_len)
 	size_t ol;
 	uint8_t *ov;
 
+	pdu->opt_ptr = NULL;
+
 	if (pdu->len > pdu->max)
 		return CE_INVALID_PACKET;
 
 	if (pdu->len < 4)
 		return CE_INVALID_PACKET;
 
-	// Setup Header Struct Overlay
-	pdu->hdr = (coap_hdr*)pdu->buf;
-
 	// Check Version
-	if (pdu->hdr->ver != 1)
+	if (coap_get_version(pdu) != 1)
 		return CE_INVALID_PACKET;
 
 	// Check TKL
-	if (pdu->hdr->tkl > 8)
+	if (coap_get_tkl(pdu) > 8)
 		return CE_INVALID_PACKET;
 
 	// Check Options
-	ov = pdu->buf + 4 + pdu->hdr->tkl;
+	ov = pdu->buf + 4 + coap_get_tkl(pdu);
 	ol = 0;
 	while((err = coap_decode_option(ov + ol, pdu->len-(ov-pdu->buf), NULL, &ol, &ov)) != 0){
 		if (err == CE_NONE){
@@ -89,12 +88,12 @@ coap_option coap_get_option(coap_pdu *pdu, coap_option *last)
 		option.len = 0;
 		option.val = NULL;
 
-		opt_ptr = pdu->buf + 4 + pdu->hdr->tkl;
+		opt_ptr = pdu->buf + 4 + coap_get_tkl(pdu);
 	}
 
 	// If opt_ptr is outside pkt range, put it at first opt.
 	if (opt_ptr > (pdu->buf + pdu->len) || opt_ptr <= pdu->buf){
-		opt_ptr = pdu->buf + 4 + pdu->hdr->tkl;
+		opt_ptr = pdu->buf + 4 + coap_get_tkl(pdu);
 	}
 
 	err = coap_decode_option(opt_ptr, pdu->len-(opt_ptr-pdu->buf), &option.num, &option.len, &option.val);
@@ -183,7 +182,7 @@ coap_error coap_decode_option(uint8_t *pkt_ptr, size_t pkt_len,
 coap_payload coap_get_payload(coap_pdu *pdu)
 {
 	
-	size_t offset = 4 + pdu->hdr->tkl;
+	size_t offset = 4 + coap_get_tkl(pdu);
 	coap_option option;
 	coap_payload payload;
 	coap_error err;
@@ -224,15 +223,28 @@ coap_error coap_init_pdu(coap_pdu *pdu)
 	if (pdu->max < 4)
 		return CE_INSUFFICIENT_BUFFER;
 
-	pdu->hdr = (coap_hdr*)pdu->buf;
-
-	pdu->hdr->ver = COAP_V1;
-	pdu->hdr->type = CT_RST;
-	pdu->hdr->tkl = 0;
-	pdu->hdr->code = CC_EMPTY;
-	pdu->hdr->mid = 0;
+	coap_set_version(pdu, COAP_V1);
+	coap_set_type(pdu, CT_RST);
+	coap_set_token(pdu, 0, 0);
+	coap_set_code(pdu, CC_EMPTY);
+	coap_set_mid(pdu, 0);
 
 	pdu->len = 4;
+	pdu->opt_ptr = NULL;
+
+	return CE_NONE;
+}
+
+coap_error coap_set_version(coap_pdu *pdu, coap_version ver)
+{
+	// Check that we were given enough packet.
+	if (pdu->max < 1)
+		return CE_INSUFFICIENT_BUFFER;
+
+	pdu->buf[0] = (ver << 6) | (pdu->buf[0] & 0x3F);
+
+	if (pdu->len < 1)
+		pdu->len = 1;
 
 	return CE_NONE;
 }
@@ -293,19 +305,19 @@ coap_error coap_set_token(coap_pdu *pdu, uint64_t token, uint8_t tkl)
 	// Check if we may need to make or take room.
 	if (pdu->len > 4){
 		// Check that we were given enough buffer.
-		if (pdu->max < pdu->len + (tkl - pdu->hdr->tkl))
+		if (pdu->max < pdu->len + (tkl - coap_get_tkl(pdu)))
 			return CE_INSUFFICIENT_BUFFER;
 
 		// Move rest of packet to make room or take empty space.
-		memmove(pdu->buf + 4 + tkl, pdu->buf + 4 + pdu->hdr->tkl, pdu->len - 4 - pdu->hdr->tkl);
+		memmove(pdu->buf + 4 + tkl, pdu->buf + 4 + coap_get_tkl(pdu), pdu->len - 4 - coap_get_tkl(pdu));
 	}
 
 	// Set token.
 	memcpy(pdu->buf+4, &token, tkl);
 
-	pdu->len += tkl - pdu->hdr->tkl;
+	pdu->len += tkl - coap_get_tkl(pdu);
 
-	pdu->hdr->tkl = tkl;
+	pdu->buf[0] = (tkl & 0x0F) | (pdu->buf[0] & 0xF0);
 
 	return CE_NONE;
 }
@@ -318,7 +330,7 @@ coap_error coap_add_option(coap_pdu *pdu, int32_t opt_num, uint8_t* value, uint1
 	coap_error err;
 
 	// Set pointer to "zeroth option's value" which is really first option header.
-	fopt_val = pdu->buf + 4 + pdu->hdr->tkl; // ptr to start of options
+	fopt_val = pdu->buf + 4 + coap_get_tkl(pdu); // ptr to start of options
 	fopt_len = 0;
 
 	// Option number delta starts at zero.
@@ -379,7 +391,7 @@ coap_error coap_set_payload(coap_pdu *pdu, uint8_t *payload, size_t payload_len)
 	coap_error err;
 
 	// Set pointer to "zeroth option's value" which is really first option header.
-	fopt_val = pdu->buf + 4 + pdu->hdr->tkl;
+	fopt_val = pdu->buf + 4 + coap_get_tkl(pdu);
 	fopt_len = 0;
 
 	// Option number delta starts at zero.

@@ -22,13 +22,13 @@ static char * test_msg_empty_con_getters() {
 	          coap_validate_pkt(&msg_ref) == CE_NONE);
 
 	mu_assert("[ERROR] Empty CON version decoded wrong.",
-	          msg_ref.hdr->ver == COAP_V1);
+	          coap_get_version(&msg_ref) == COAP_V1);
 
 	mu_assert("[ERROR] Empty CON type decoded wrong.",
-	          msg_ref.hdr->type == CT_CON);
+	          coap_get_type(&msg_ref) == CT_CON);
 
 	mu_assert("[ERROR] Empty CON code decoded wrong.",
-	          msg_ref.hdr->code == CC_EMPTY);
+	          coap_get_code(&msg_ref) == CC_EMPTY);
 
 	mu_assert("[ERROR] Empty CON code class decoded wrong.",
 	          coap_get_code_class(&msg_ref) == 0);
@@ -48,14 +48,17 @@ static char * test_msg_empty_con_setters() {
 	mu_assert("[ERROR] Empty CON failed to init.",
 	          coap_init_pdu(&msg_test) == CE_NONE);
 
-	mu_assert("[ERROR] Empty CON hdr bit field is set wrong.",
-	          (uint8_t *)msg_test.hdr == msg_test.buf);
+	mu_assert("[ERROR] Empty CON failed to set version.",
+	          coap_set_version(&msg_test, COAP_V1) >= 0);
 
-	// Can this actually fail?
-	msg_test.hdr->ver = COAP_V1;
-	msg_test.hdr->type = CT_CON;
-	msg_test.hdr->code = CC_EMPTY;
-	msg_test.hdr->mid = 0;
+	mu_assert("[ERROR] Empty CON failed to set type.",
+	          coap_set_type(&msg_test, CT_CON) >= 0);
+
+	mu_assert("[ERROR] Empty CON failed to set code.",
+	          coap_set_code(&msg_test, CC_EMPTY) >= 0);
+
+	mu_assert("[ERROR] Empty CON failed to set message ID.",
+	          coap_set_mid(&msg_test, 0) >= 0);
 
 	mu_assert("[ERROR] Empty CON failed to set token.",
 	          coap_set_token(&msg_test, 0, 0) == CE_NONE);
@@ -83,13 +86,13 @@ static char * test_msg_get_con_getters() {
 	          coap_validate_pkt(&msg_ref) == CE_NONE);
 
 	mu_assert("[ERROR] GET CON version decoded wrong.",
-	          msg_ref.hdr->ver == COAP_V1);
+	          coap_get_version(&msg_ref) == COAP_V1);
 
 	mu_assert("[ERROR] GET CON type decoded wrong.",
-	          msg_ref.hdr->type == CT_CON);
+	          coap_get_type(&msg_ref) == CT_CON);
 
 	mu_assert("[ERROR] GET CON code decoded wrong.",
-	          msg_ref.hdr->code == CC_GET);
+	          coap_get_code(&msg_ref) == CC_GET);
 
 	mu_assert("[ERROR] GET CON code class decoded wrong.",
 	          coap_get_code_class(&msg_ref) == 0);
@@ -139,10 +142,17 @@ static char * test_msg_get_con_setters() {
 	mu_assert("[ERROR] Empty CON failed to init.",
 	          coap_init_pdu(&msg_test) == CE_NONE);
 
-	msg_test.hdr->ver = COAP_V1;
-	msg_test.hdr->type = CT_CON;
-	msg_test.hdr->code = CC_GET;
-	msg_test.hdr->mid = 0x3700;
+	mu_assert("[ERROR] GET CON failed to set version.",
+	          coap_set_version(&msg_test, COAP_V1) >= 0);
+
+	mu_assert("[ERROR] GET CON failed to set type.",
+	          coap_set_type(&msg_test, CT_CON) >= 0);
+
+	mu_assert("[ERROR] GET CON failed to set code.",
+	          coap_set_code(&msg_test, CC_GET) >= 0);
+
+	mu_assert("[ERROR] GET CON failed to set message ID.",
+	          coap_set_mid(&msg_test, 0x37) >= 0);
 
 	mu_assert("[ERROR] GET CON failed to set token.",
 	          coap_set_token(&msg_test, 0, 0) >= 0);
@@ -182,10 +192,17 @@ static char * test_msg_get_con_setters_out_order() {
 	mu_assert("[ERROR] Empty CON failed to init.",
 	          coap_init_pdu(&msg_test) == CE_NONE);
 
-	msg_test.hdr->ver = COAP_V1;
-	msg_test.hdr->type = CT_CON;
-	msg_test.hdr->code = CC_GET;
-	msg_test.hdr->mid = 0x3700; //this is ugly
+	mu_assert("[ERROR] GET CON failed to set version. (Out of Order)",
+	          coap_set_version(&msg_test, COAP_V1) >= 0);
+
+	mu_assert("[ERROR] GET CON failed to set type. (Out of Order)",
+	          coap_set_type(&msg_test, CT_CON) >= 0);
+
+	mu_assert("[ERROR] GET CON failed to set code. (Out of Order)",
+	          coap_set_code(&msg_test, CC_GET) >= 0);
+
+	mu_assert("[ERROR] GET CON failed to set message ID. (Out of Order)",
+	          coap_set_mid(&msg_test, 0x37) >= 0);
 
 	mu_assert("[ERROR] GET CON failed to set token. (Out of Order)",
 	          coap_set_token(&msg_test, 0xFFFFFFFF, 4) >= 0);
@@ -223,10 +240,17 @@ static char * test_msg_post_con_setters() {
 	mu_assert("[ERROR] Empty CON failed to init.",
 	          coap_init_pdu(&msg_test) == CE_NONE);
 
-	msg_test.hdr->ver = COAP_V1;
-	msg_test.hdr->type = CT_CON;
-	msg_test.hdr->code = CC_POST;
-	msg_test.hdr->mid = 0x3700; //hack
+	mu_assert("[ERROR] POST CON failed to set version.",
+	          coap_set_version(&msg_test, COAP_V1) >= 0);
+
+	mu_assert("[ERROR] POST CON failed to set type.",
+	          coap_set_type(&msg_test, CT_CON) >= 0);
+
+	mu_assert("[ERROR] POST CON failed to set code.",
+	          coap_set_code(&msg_test, CC_POST) >= 0);
+
+	mu_assert("[ERROR] POST CON failed to set message ID.",
+	          coap_set_mid(&msg_test, 0x37) >= 0);
 
 	mu_assert("[ERROR] POST CON failed to set token.",
 	          coap_set_token(&msg_test, 0, 0) >= 0);
@@ -262,13 +286,13 @@ static char * test_msg_content_ack_getters() {
 	          coap_validate_pkt(&msg_ref) == CE_NONE);
 
 	mu_assert("[ERROR] CONTENT ACK version decoded wrong.",
-	          msg_ref.hdr->ver == COAP_V1);
+	          coap_get_version(&msg_ref) == COAP_V1);
 
 	mu_assert("[ERROR] CONTENT ACK type decoded wrong.",
-	          msg_ref.hdr->type == CT_ACK);
+	          coap_get_type(&msg_ref) == CT_ACK);
 
 	mu_assert("[ERROR] CONTENT ACK code decoded wrong.",
-	          msg_ref.hdr->code == CC_CONTENT);
+	          coap_get_code(&msg_ref) == CC_CONTENT);
 
 	mu_assert("[ERROR] CONTENT ACK code class decoded wrong.",
 	          coap_get_code_class(&msg_ref) == 2);

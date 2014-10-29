@@ -42,7 +42,7 @@ extern "C" {
 /// Status Codes
 ///
 /// These codes represent the possible errors that functions in this library can
-/// return. Note that all errors are < 0.
+/// return.
 ///
 typedef enum coap_error {
 	CE_NONE = 0,
@@ -137,20 +137,6 @@ typedef enum coap_option_number {
 	CON_SIZE1 = 60
 } coap_option_number;
 
-
-///
-/// Coap Header
-///
-/// An overlayed bit field struct for accessing header fields.
-///
-typedef struct coap_hdr {
-	unsigned tkl:4;  /// token length
-	unsigned type:2; /// message type
-	unsigned ver:2;  /// coap version
-	unsigned code:8; /// message code
-	unsigned mid:16; /// message id
-} coap_hdr;
-
 ///
 /// Packet Data Unit
 ///
@@ -160,7 +146,6 @@ typedef struct coap_pdu {
 	uint8_t *buf;  /// pointer to buffer
 	size_t len;	   /// length of current message
 	size_t max;	   /// size of buffer
-	coap_hdr *hdr; /// header bit field overlay
 	uint8_t *opt_ptr; /// Internal Pointer for Option Iterator
 } coap_pdu;
 
@@ -205,6 +190,73 @@ coap_error coap_validate_pkt(coap_pdu *pdu);
 //
 
 ///
+/// Get Version
+///
+/// Extracts the CoAP version from the given message.
+/// @param  [in] pdu pointer to the coap message struct.
+/// @return version.
+/// @see coap_version
+///
+static inline coap_version  coap_get_version(coap_pdu *pdu) { return pdu->buf[0] >> 6; }
+
+///
+/// Get Message Type
+///
+/// Extracts the message type from the given message.
+/// @param  [in] pdu pointer to the coap message struct.
+/// @return type.
+/// @see coap_type
+///
+static inline coap_type coap_get_type(coap_pdu *pdu) { return (pdu->buf[0] >> 4) & 0x03; }
+
+///
+/// Get Token Length
+///
+/// Extracts the token length from the given message.
+/// @param  [in] pdu pointer to the coap message struct.
+/// @return length.
+/// @see coap_type
+///
+static inline uint8_t coap_get_tkl(coap_pdu *pdu) { return pdu->buf[0] & 0x0F; }
+
+///
+/// Get Message Code
+///
+/// Extracts the message code from the given message.
+/// @param  [in] pdu pointer to the coap message struct.
+/// @return code.
+/// @see coap_code
+///
+static inline coap_code coap_get_code(coap_pdu *pdu) { return pdu->buf[1]; }
+
+///
+/// Get Message Code Class
+///
+/// Gets the class portion of the message code.
+/// @param  [in] pdu pointer to the coap message struct.
+/// @see    coap_get_code
+///
+static inline uint8_t coap_get_code_class(coap_pdu *pdu) { return coap_get_code(pdu) >> 5; }
+
+///
+/// Get Message Code Detail
+///
+/// Gets the detail portion of the message code.
+/// @param  [in] pdu pointer to the coap message struct.
+/// @see    coap_get_code
+///
+static inline uint8_t coap_get_code_detail(coap_pdu *pdu) { return coap_get_code(pdu) & 0x1F; }
+
+///
+/// Get Message ID
+///
+/// Extracts the message ID from the given message.
+/// @param  [in] pdu pointer to the coap message struct.
+/// @return mid.
+///
+static inline uint16_t coap_get_mid(coap_pdu *pdu);
+
+///
 /// Get Message Token
 ///
 /// Extracts the token from the given message.
@@ -234,24 +286,6 @@ coap_option coap_get_option(coap_pdu *pdu, coap_option *last);
 coap_payload coap_get_payload(coap_pdu *pdu);
 
 ///
-/// Get Message Code Class
-///
-/// Gets the class portion of the message code.
-/// @param  [in] pdu pointer to the coap message struct.
-/// @see    coap_get_code
-///
-static inline uint8_t coap_get_code_class(coap_pdu *pdu) { return pdu->hdr->code >> 5; }
-
-///
-/// Get Message Code Detail
-///
-/// Gets the detail portion of the message code.
-/// @param  [in] pdu pointer to the coap message struct.
-/// @see    coap_get_code
-///
-static inline uint8_t coap_get_code_detail(coap_pdu *pdu) { return pdu->hdr->code & 0x1F; }
-
-///
 /// Internal Method
 ///
 coap_error coap_decode_option(uint8_t *pkt_ptr, size_t pkt_len,
@@ -267,11 +301,54 @@ coap_error coap_decode_option(uint8_t *pkt_ptr, size_t pkt_len,
 /// Initializes on an empty buffer for creating new CoAP packets.
 /// This function (or coap_validate for parsing packets) must be
 /// called and must return CE_NONE before you can use any of the
-/// getters or setter.
+/// getters or setter. The packet is initialized to a CoAP Ping.
 /// @param  [in, out] pdu pointer to the coap message struct.
 /// @return coap_error (0 == no error)
 ///
 coap_error coap_init_pdu(coap_pdu *pdu);
+
+///
+/// Set Version
+///
+/// Sets the version number header field.
+/// @param  [in, out] pdu pointer to the coap message struct.
+/// @param  [in]      ver      version to set. Must be COAP_V1.
+/// @return coap_error (0 == no error)
+/// @see coap_version
+///
+coap_error coap_set_version(coap_pdu *pdu, coap_version ver);
+
+///
+/// Set Message Type
+///
+/// Sets the message type header field.
+/// @param  [in, out] pdu pointer to the coap message struct.
+/// @param  [in]      mtype    type to set.
+/// @return coap_error (0 == no error)
+/// @see coap_type
+///
+coap_error coap_set_type(coap_pdu *pdu, coap_type mtype);
+
+///
+/// Set Message Code
+///
+/// Sets the message type header field.
+/// @param  [in, out] pdu pointer to the coap message struct.
+/// @param  [in]      code     code to set.
+/// @return coap_error (0 == no error)
+/// @see coap_code
+///
+coap_error coap_set_code(coap_pdu *pdu, coap_code code);
+
+///
+/// Set Message ID
+///
+/// Sets the message ID header field.
+/// @param  [in, out] pdu pointer to the coap message struct.
+/// @param  [in]      mid      message ID to set.
+/// @return coap_error (0 == no error)
+///
+coap_error coap_set_mid(coap_pdu *pdu, uint16_t mid);
 
 ///
 /// Set Message Token
