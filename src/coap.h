@@ -254,7 +254,7 @@ static inline uint8_t coap_get_code_detail(coap_pdu *pdu) { return coap_get_code
 /// @param  [in] pdu pointer to the coap message struct.
 /// @return mid.
 ///
-static inline uint16_t coap_get_mid(coap_pdu *pdu) { return (pdu->buf[3] << 8) & pdu->buf[4]; }
+static inline uint16_t coap_get_mid(coap_pdu *pdu) { return (pdu->buf[2] << 8) & pdu->buf[3]; }
 
 ///
 /// Get Message Token
