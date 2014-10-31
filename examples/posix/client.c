@@ -171,18 +171,22 @@ void coap_pretty_print(coap_pdu *pdu)
 
   if (coap_validate_pkt(pdu) == CE_NONE){
       printf(" ------ Valid CoAP Packet (%zi) ------ \n", pdu->len);
-      printf("Type: %i\n",coap_get_type(pdu));
-      printf("Code: %i.%02i\n", coap_get_code_class(pdu), coap_get_code_detail(pdu));
+      printf("Type:  %i\n",coap_get_type(pdu));
+      printf("Code:  %i.%02i\n", coap_get_code_class(pdu), coap_get_code_detail(pdu));
+      printf("MID:   0x%X\n", coap_get_mid(pdu));
+      printf("Token: 0x%llX\n", coap_get_token(pdu));
 
       while ((opt = coap_get_option(pdu, &opt)).num != 0){
         if (opt.num == 0)
           break;
 
         printf("Option: %i\n", opt.num);
-        printf(" Value: %.*s (%i)\n", opt.len, opt.val, opt.len);
+        if (opt.val != NULL && opt.len != 0)
+          printf(" Value: %.*s (%zi)\n", (int)opt.len, opt.val, opt.len);
       }
       // Note: get_option returns payload pointer when it finds the payload marker
-      printf("Value: %.*s (%i)\n", opt.len, opt.val, opt.len);
+      if (opt.val != NULL && opt.len != 0)
+        printf("Value: %.*s (%zi)\n", (int)opt.len, opt.val, opt.len);
     } else {
       printf(" ------ Non-CoAP Message (%zi) ------ \n", pdu->len);
       hex_dump(pdu->buf, pdu->len);
