@@ -186,7 +186,7 @@ void coap_pretty_print(coap_pdu *pdu)
       }
       // Note: get_option returns payload pointer when it finds the payload marker
       if (opt.val != NULL && opt.len != 0)
-        printf("Value: %.*s (%zi)\n", (int)opt.len, opt.val, opt.len);
+        printf("Payload: %.*s (%zi)\n", (int)opt.len, opt.val, opt.len);
     } else {
       printf(" ------ Non-CoAP Message (%zi) ------ \n", pdu->len);
       hex_dump(pdu->buf, pdu->len);
