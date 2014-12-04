@@ -122,7 +122,7 @@ int main(void)
     coap_pretty_print(&msg_send);
 
     // Wait for Response
-    bytes_recv = recvfrom(remotesock, (void *)msg_recv.buf, sizeof(msg_recv.buf), 0, q->ai_addr, &q->ai_addrlen);
+    bytes_recv = recvfrom(remotesock, (void *)msg_recv.buf, msg_recv.max, 0, q->ai_addr, &q->ai_addrlen);
     if (bytes_recv < 0) {
       fprintf(stderr, "%s\n", strerror(errno));
       exit(EXIT_FAILURE);
