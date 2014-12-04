@@ -27,6 +27,12 @@ static char * test_msg_empty_con_getters() {
 	mu_assert("[ERROR] Empty CON type decoded wrong.",
 	          coap_get_type(&msg_ref) == CT_CON);
 
+	mu_assert("[ERROR] Empty CON tkl decoded wrong.",
+	          coap_get_tkl(&msg_ref) == 0);
+
+	mu_assert("[ERROR] Empty CON token decoded wrong.",
+	          coap_get_token(&msg_ref) == 0);
+
 	mu_assert("[ERROR] Empty CON code decoded wrong.",
 	          coap_get_code(&msg_ref) == CC_EMPTY);
 
@@ -34,6 +40,37 @@ static char * test_msg_empty_con_getters() {
 	          coap_get_code_class(&msg_ref) == 0);
 
 	mu_assert("[ERROR] Empty CON code detail decoded wrong.",
+	          coap_get_code_detail(&msg_ref) == 0);
+
+	return 0;
+}
+
+static char * test_msg_empty_con_getters_with_token() {
+	uint8_t ref_bin[] = {66,0,0,0,37,42};
+	coap_pdu msg_ref = {ref_bin, 6, 6};
+
+	mu_assert("[ERROR] Empty CON with token failed validation.",
+	          coap_validate_pkt(&msg_ref) == CE_NONE);
+
+	mu_assert("[ERROR] Empty CON with token version decoded wrong.",
+	          coap_get_version(&msg_ref) == COAP_V1);
+
+	mu_assert("[ERROR] Empty CON with token type decoded wrong.",
+	          coap_get_type(&msg_ref) == CT_CON);
+
+	mu_assert("[ERROR] Empty CON with token tkl decoded wrong.",
+	          coap_get_tkl(&msg_ref) == 2);
+
+	mu_assert("[ERROR] Empty CON with token token decoded wrong.",
+	          coap_get_token(&msg_ref) == 0x2A25);
+
+	mu_assert("[ERROR] Empty CON with token code decoded wrong.",
+	          coap_get_code(&msg_ref) == CC_EMPTY);
+
+	mu_assert("[ERROR] Empty CON with token code class decoded wrong.",
+	          coap_get_code_class(&msg_ref) == 0);
+
+	mu_assert("[ERROR] Empty CON with token code detail decoded wrong.",
 	          coap_get_code_detail(&msg_ref) == 0);
 
 	return 0;
@@ -340,6 +377,7 @@ static char * all_tests() {
 
 	// Actually Run the Real Tests
 	mu_run_test(test_msg_empty_con_getters);
+	mu_run_test(test_msg_empty_con_getters_with_token);
 	mu_run_test(test_msg_empty_con_setters);
 	mu_run_test(test_msg_get_con_getters);
 	mu_run_test(test_msg_get_con_setters);

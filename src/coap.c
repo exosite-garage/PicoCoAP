@@ -56,7 +56,7 @@ coap_error coap_validate_pkt(coap_pdu *pdu) //uint8_t *pkt, size_t pkt_len)
 uint64_t coap_get_token(coap_pdu *pdu)
 {
 	uint8_t tkl;
-	uint64_t token;
+	uint64_t token = 0;
 
 	// Extract TKL.
 	tkl = pdu->buf[0] & 0x0F;
