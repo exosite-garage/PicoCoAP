@@ -346,6 +346,27 @@ static char * test_msg_content_ack_getters() {
 	return 0;
 }
 
+static char * test_msg_pl_from_get_opt_no_opt() {
+	uint8_t ref_bin[] = {0x62, 0x45, 0xee, 0x8b, 0x0e, 0x50, 0xff, 0x53,
+		                 0x68, 0x6f, 0x6f, 0x70};
+	coap_pdu msg_ref = {ref_bin, 12, 12};
+
+	coap_option payload;
+
+	mu_assert("[ERROR] PAYLOAD NO OPT failed validation.",
+	          coap_validate_pkt(&msg_ref) == CE_NONE);
+
+	payload = coap_get_option(&msg_ref, 0);
+	mu_assert("[ERROR] PAYLOAD NO OPT didn't find payload.",
+	          payload.num == 0);
+	mu_assert("[ERROR] PAYLOAD NO OPT payload length was wrong.",
+	          payload.len == 5);
+	mu_assert("[ERROR] PAYLOAD NO OPT payload value was wrong.",
+	          memcmp(payload.val, ref_bin+7, 5) == 0);
+
+	return 0;
+}
+
 // Helpers
 void hex_dump(char* bytes, size_t len)
 {
@@ -384,6 +405,7 @@ static char * all_tests() {
 	mu_run_test(test_msg_content_ack_getters);
 	mu_run_test(test_msg_get_con_setters_out_order);
 	mu_run_test(test_msg_post_con_setters);
+	mu_run_test(test_msg_pl_from_get_opt_no_opt);
 	return 0;
 }
 
