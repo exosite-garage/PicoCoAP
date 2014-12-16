@@ -35,43 +35,17 @@ int main(void)
   uint16_t message_id_counter = rand();
 
   // Socket to Exosite
-  int localsock, remotesock;
+  int remotesock;
   size_t bytes_sent;
   ssize_t bytes_recv;
   int rv;
 
-  struct addrinfo exohints, *servinfo, *p, *q;
+  struct addrinfo exohints, *servinfo, *q;
 
   memset(&exohints, 0, sizeof exohints);
   exohints.ai_family = AF_UNSPEC;
   exohints.ai_socktype = SOCK_DGRAM;
   exohints.ai_flags = AI_PASSIVE;
-
-  if ((rv = getaddrinfo(NULL, port, &exohints, &servinfo)) != 0) {
-    fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
-    return 1;
-  }
-
-  // loop through all the results and make a socket
-  for(p = servinfo; p != NULL; p = p->ai_next) {
-    if ((localsock = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
-      perror("bad socket");
-      continue;
-    }
-
-    if (bind(localsock, p->ai_addr, p->ai_addrlen) == -1) {
-      close(localsock);
-      perror("bad bind");
-      continue;
-    }
-
-    break;
-  }
-
-  if (p == NULL) {
-      fprintf(stderr, "Failed to Bind Socket\n");
-      return 2;
-  }
 
   if ((rv = getaddrinfo(host, port, &exohints, &servinfo)) != 0) {
     fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
