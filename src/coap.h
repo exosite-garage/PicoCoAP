@@ -124,6 +124,7 @@ typedef enum coap_option_number {
 	CON_URI_HOST = 3,
 	CON_ETAG = 4,
 	CON_IF_NONE_MATCH = 5,
+	CON_OBSERVE = 6,
 	CON_URI_PORT = 7,
 	CON_LOCATION_PATH = 8,
 	CON_URI_PATH = 11,
