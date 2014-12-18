@@ -277,6 +277,19 @@ uint64_t  coap_get_token(coap_pdu *pdu);
 coap_option coap_get_option(coap_pdu *pdu, coap_option *last);
 
 ///
+/// Get Option by Option Number
+///
+/// Gets a single specified by the option number and index of which occurrence
+/// of that option number you'd like.
+/// @param  [in]  pdu  pointer to the coap message struct.
+/// @param  [in]  num  option number to get.
+/// @param  [in]  occ  occurrence of to get (0th, 1st, 2nd, etc)
+///                    0 for the first option.
+/// @return coap_option
+///
+coap_option coap_get_option_by_num(coap_pdu *pdu, coap_option_number num, uint8_t occ);
+
+///
 /// Get Option
 ///
 /// Extracts the option with the given index in the given message.

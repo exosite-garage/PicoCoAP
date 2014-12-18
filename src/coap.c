@@ -120,6 +120,25 @@ coap_option coap_get_option(coap_pdu *pdu, coap_option *last)
 }
 
 
+coap_option coap_get_option_by_num(coap_pdu *pdu, coap_option_number num, uint8_t occ)
+{
+	coap_option option;
+	uint8_t i = 0;
+
+	option.num = 0;
+
+	do {
+		option = coap_get_option(pdu, &option);
+
+		if (option.num == num) {
+			i++;
+		}
+	} while (i < occ);
+
+	return option;
+}
+
+
 //
 // Decoding Functions (Intended for Internal Use)
 //
