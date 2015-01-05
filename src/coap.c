@@ -247,13 +247,15 @@ coap_error coap_init_pdu(coap_pdu *pdu)
 	if (pdu->max < 4)
 		return CE_INSUFFICIENT_BUFFER;
 
+	pdu->len = 0;
+	memset(pdu->buf, 0, 4);
+
 	coap_set_version(pdu, COAP_V1);
 	coap_set_type(pdu, CT_RST);
 	coap_set_token(pdu, 0, 0);
 	coap_set_code(pdu, CC_EMPTY);
 	coap_set_mid(pdu, 0);
 
-	pdu->len = 4;
 	pdu->opt_ptr = NULL;
 
 	return CE_NONE;
