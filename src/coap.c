@@ -132,8 +132,15 @@ coap_option coap_get_option_by_num(coap_pdu *pdu, coap_option_number num, uint8_
 
 		if (option.num == num) {
 			i++;
+		} else if (option.num > num) {
+			option.num = 0;
+			option.len = 0;
+			option.val = NULL;
+			break;
+		} else if (option.num == 0) {
+			break;
 		}
-	} while (i < occ);
+	} while (i <= occ);
 
 	return option;
 }

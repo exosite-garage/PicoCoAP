@@ -161,6 +161,22 @@ static char * test_msg_get_con_getters() {
 	mu_assert("[ERROR] GET CON option two value was wrong.",
 	          memcmp(option.val, ref_bin+14, option.len) == 0);
 
+	option = coap_get_option_by_num(&msg_ref, CON_URI_QUERY, 0);
+	mu_assert("[ERROR] GET CON option by num length was wrong.",
+	          option.len == 40);
+	mu_assert("[ERROR] GET CON option by num number was wrong.",
+	          option.num == CON_URI_QUERY);
+	mu_assert("[ERROR] GET CON option by num value was wrong.",
+	          memcmp(option.val, ref_bin+14, option.len) == 0);
+
+	option = coap_get_option_by_num(&msg_ref, CON_ETAG, 0);
+	mu_assert("[ERROR] GET CON non-option by num length not zero.",
+	          option.len == 0);
+	mu_assert("[ERROR] GET CON non-option by num number not null.",
+	          option.num == 0);
+	mu_assert("[ERROR] GET CON non-option by num value not null.",
+	          option.val == NULL);
+
 	return 0;
 }
 
