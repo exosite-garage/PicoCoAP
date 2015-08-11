@@ -14,8 +14,6 @@ coap_error coap_validate_pkt(coap_pdu *pdu) //uint8_t *pkt, size_t pkt_len)
 	size_t ol;
 	uint8_t *ov;
 
-	pdu->opt_ptr = NULL;
-
 	if (pdu->len > pdu->max)
 		return CE_INVALID_PACKET;
 
@@ -262,8 +260,6 @@ coap_error coap_init_pdu(coap_pdu *pdu)
 	coap_set_token(pdu, 0, 0);
 	coap_set_code(pdu, CC_EMPTY);
 	coap_set_mid(pdu, 0);
-
-	pdu->opt_ptr = NULL;
 
 	return CE_NONE;
 }

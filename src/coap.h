@@ -147,7 +147,6 @@ typedef struct coap_pdu {
 	uint8_t *buf;  /// pointer to buffer
 	size_t len;	   /// length of current message
 	size_t max;	   /// size of buffer
-	uint8_t *opt_ptr; /// Internal Pointer for Option Iterator
 } coap_pdu;
 
 ///
